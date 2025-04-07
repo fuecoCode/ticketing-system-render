@@ -64,6 +64,8 @@ export default function SeatSelectionPage() {
     }
   };
 
+  console.log(`${import.meta.env.VITE_API_URL}`); 
+
   return (
     <div className="p-4 sm:p-6 max-w-full sm:max-w-4xl mx-auto">
       <NavBar />
