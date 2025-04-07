@@ -16,6 +16,17 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/verify', verifyRoutes);
 
+app.get("/seats", (req, res) => {
+  const db = require("./database");
+  db.all("SELECT * FROM seats", (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("DB read error");
+    }
+    res.json(rows);
+  });
+});
+
 console.log("🧪 靜態檔案：", distPath);
 app.use(express.static(distPath));
 
@@ -23,6 +34,8 @@ app.use(express.static(distPath));
 app.get("/*", function (req, res) {
   res.sendFile(path.join(distPath, "index.html"));
 });
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
