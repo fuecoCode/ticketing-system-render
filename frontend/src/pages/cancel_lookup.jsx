@@ -16,7 +16,7 @@ export default function CancelLookupPage() {
   };
 
   const fetchOrders = async () => {
-    const res = await fetch("http://localhost:3001/api/orders/lookup", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/lookup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, phone })
@@ -31,7 +31,7 @@ export default function CancelLookupPage() {
 
 
   const handleCancel = async (seat_code) => {
-    const res = await fetch("http://localhost:3001/api/orders/cancel", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, phone, seat_code }), // 改這裡！
@@ -48,7 +48,7 @@ export default function CancelLookupPage() {
 
 
   const handleSendCode = async () => {
-  const res = await fetch("http://localhost:3001/api/verify/request", {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/verify/request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, phone })
@@ -59,7 +59,7 @@ export default function CancelLookupPage() {
   };
 
   const handleVerifyCode = async () => {
-    const res = await fetch("http://localhost:3001/api/verify/confirm", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/verify/confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, phone, code })

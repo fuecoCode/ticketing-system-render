@@ -28,7 +28,7 @@ export default function SeatSelectionPage() {
   const navigate = useNavigate();
 
   const fetchSeats = async () => {
-    const res = await fetch("http://localhost:3001/api/seats/status");
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/seats/status`);
     const data = await res.json();
     const updated = seatLayout.map((row) =>
       row.map((code) => (code ? { code, status: data[code]?.status || "available" } : null))

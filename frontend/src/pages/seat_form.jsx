@@ -16,7 +16,7 @@ export default function FormPage() {
 
     const handleUnload = () => {
       navigator.sendBeacon(
-        "http://localhost:3001/api/seats/release",
+        `${import.meta.env.VITE_API_URL}/api/seats/release`,
         JSON.stringify({ seats: selectedSeats })
       );
     };
@@ -38,7 +38,7 @@ export default function FormPage() {
       navigate("/");
     } else {
       // 🔐 Lock selected seats on mount
-      fetch("http://localhost:3001/api/seats/lock", {
+      fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seats: selectedSeats }),
@@ -69,7 +69,7 @@ export default function FormPage() {
           clearInterval(timer);
 
           // 🔓 Release locked seats on timeout
-          fetch("http://localhost:3001/api/seats/release", {
+          fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ seats: selectedSeats }),
@@ -102,7 +102,7 @@ export default function FormPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/orders/create", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, seats: selectedSeats }),
@@ -123,7 +123,7 @@ export default function FormPage() {
 
   const handleCancel = async () => {
     try {
-      await fetch("http://localhost:3001/api/seats/release", {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seats: selectedSeats }),
@@ -143,7 +143,7 @@ export default function FormPage() {
   };
 
   const releaseSeats = async () => {
-    await fetch("http://localhost:3001/api/seats/release", {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ seats: selectedSeats }),
