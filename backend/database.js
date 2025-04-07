@@ -1,6 +1,7 @@
 // backend/database.js
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("concert.db");
+const dbPath = path.join("/tmp", "concert.db");
+const db = new sqlite3.Database(dbPath);
 
 // 初次啟動建表
 db.serialize(() => {
