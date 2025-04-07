@@ -45,7 +45,7 @@ db.serialize(() => {
   for (let row of rows) {
     for (let num of [...leftNumbers, ...midNumbers, ...rightNumbers]) {
       const code = `${row}${num}`;
-      // console.log(`Inserted seat: ${code}`);
+      console.log(`Inserted seat: ${code}`);
       stmt.run(code);
     }
   }
