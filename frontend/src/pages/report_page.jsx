@@ -27,6 +27,13 @@ export default function AdminReportPage() {
       .then(setOrders);
   }, [isAuthenticated]);
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "無時間";
+    const ts = Number(timestamp);
+    const adjusted = ts < 1e12 ? ts * 1000 : ts;
+    const date = new Date(adjusted);
+    return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleString();
+  };
 
   const filteredOrders = orders.filter(o =>
     filterEmail === "" || o.email.toLowerCase().includes(filterEmail.toLowerCase())
@@ -84,7 +91,7 @@ export default function AdminReportPage() {
                   <td className="border px-3 py-1">{order.phone}</td>
                   <td className="border px-3 py-1">{order.email}</td>
                   <td className="border px-3 py-1">{order.seat_code}</td>
-                  <td className="border px-3 py-1">{new Date(order.created_at).toLocaleString()}</td>
+                  <td className="border px-3 py-1">{formatTime(order.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -110,7 +117,7 @@ export default function AdminReportPage() {
                   <td className="border px-3 py-1">{log.action}</td>
                   <td className="border px-3 py-1">{log.seat_code}</td>
                   <td className="border px-3 py-1">{log.email}</td>
-                  <td className="border px-3 py-1">{new Date(log.timestamp).toLocaleString()}</td>
+                  <td className="border px-3 py-1">{formatTime(log.timestamp)}</td>
                 </tr>
               ))}
             </tbody>

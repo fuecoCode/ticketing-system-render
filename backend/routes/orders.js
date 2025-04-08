@@ -77,6 +77,7 @@ router.post("/cancel", async (req, res) => {
       await client.query("BEGIN");
 
       let deletedCount = 0;
+      const now = Date.now(); // 🔥 加入 timestamp
 
       for (const code of seats) {
         const deleteResult = await client.query(
