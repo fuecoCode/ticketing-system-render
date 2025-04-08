@@ -25,6 +25,12 @@ router.post("/create", async (req, res) => {
           `UPDATE seats SET status = 'booked', locked_at = NULL WHERE code = $1`,
           [code]
         );
+        // 3. 紀錄 log（功能 2）
+        await client.query(
+          `INSERT INTO logs (action, seat_code, email, timestamp, detail)
+           VALUES ($1, $2, $3, $4, $5)`,
+          ['reserve', code, email, now, JSON.stringify({ name, nickname, phone })]
+        );
       }
 
       await client.query("COMMIT");
@@ -85,6 +91,12 @@ router.post("/cancel", async (req, res) => {
             `UPDATE seats SET status = 'available', locked_at = NULL WHERE code = $1`,
             [code]
           );
+           // 🔥 紀錄 log
+          await client.query(
+            `INSERT INTO logs (action, seat_code, email, timestamp, detail)
+             VALUES ($1, $2, $3, $4, $5)`,
+            ['cancel', code, email, now, JSON.stringify({ phone })]
+          );
         }
       }
 
@@ -116,6 +128,25 @@ router.post("/cancel", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+router.get("/report/orders", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get("/report/logs", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM logs ORDER BY timestamp DESC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 
 module.exports = router;

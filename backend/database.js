@@ -48,15 +48,23 @@ async function initializeDatabase() {
         expires_at BIGINT
       )
     `);
-    
 
-    const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-    const leftNumbers = [24, 22, 20, 18, 16, 14];
-    const midNumbers = [12, 10, 8, 6, 4, 2, 1, 3, 5, 7, 9, 11];
-    const rightNumbers = [13, 15, 17, 19, 21, 23];
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id SERIAL PRIMARY KEY,
+      action TEXT NOT NULL,           -- reserve / cancel
+      seat_code TEXT NOT NULL,
+      email TEXT,
+      timestamp BIGINT NOT NULL,
+      detail JSONB                    -- optional 詳細資訊
+    )
+  `);
+
+    const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i)); // A~L
+    const nums = Array.from({ length: 25 }, (_, i) => i); // 0~24
 
     for (let row of rows) {
-      for (let num of [...leftNumbers, ...midNumbers, ...rightNumbers]) {
+      for (let num of nums) {
         const code = `${row}${num}`;
         await client.query(
           `INSERT INTO seats (code, status, locked_at)

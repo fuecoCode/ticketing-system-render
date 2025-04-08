@@ -4,9 +4,10 @@ import '../index.css'
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 
-const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
 
-const generateSeatLayout = () => {
+const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i)); // A~L
+
+const generateSeatLayout_AtoL = () => {
   const layout = [];
 
   for (let r of rows) {
@@ -14,12 +15,15 @@ const generateSeatLayout = () => {
     const mid = [12, 10, 8, 6, 4, 2, 1, 3, 5, 7, 9, 11].map(n => `${r}${n}`);
     const right = [13, 15, 17, 19, 21, 23].map(n => `${r}${n}`);
     layout.push([...left, "", ...mid, "", ...right]);
+    if(r === "I"){
+      layout.push(Array(26).fill(""));
+    }
   }
 
   return layout;
 };
 
-const seatLayout = generateSeatLayout();
+const seatLayout_AtoI = generateSeatLayout_AtoL();
 
 export default function SeatSelectionPage() {
   const [seats, setSeats] = useState([]);
@@ -30,7 +34,7 @@ export default function SeatSelectionPage() {
   const fetchSeats = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/seats/status`);
     const data = await res.json();
-    const updated = seatLayout.map((row) =>
+    const updated = seatLayout_AtoI.map((row) =>
       row.map((code) => (code ? { code, status: data[code]?.status || "available" } : null))
     );
     setSeats(updated);
