@@ -8,7 +8,8 @@ export default function AdminLoginPage() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === process.env.REACT_APP_ADMIN_PASSWORD) {
+    console.log(`${password} , ${import.meta.env.VITE_ADMIN_PASSWORD}`);
+    if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
       sessionStorage.setItem("admin_login", "true");
       navigate("/admin/report");
     } else {
