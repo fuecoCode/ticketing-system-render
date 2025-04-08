@@ -58,11 +58,6 @@ function sendCancellationConfirmation(to, name, seats) {
         <p>您好 <strong>${name}</strong>，</p>
         <p>您已成功取消以下座位的訂位：</p>
         <p style="font-size: 16px; font-weight: bold; color: #c0392b;">${seatList}</p>
-
-        <div style="margin-top: 20px; background-color: #fce4e4; padding: 10px; border-left: 4px solid #e74c3c;">
-          <p style="margin: 0;"><strong>💡 退票提醒：</strong>若您已完成付款，退款將於 <strong>3–5 個工作天內</strong>原路退還。</p>
-        </div>
-
         <div style="margin-top: 30px; text-align: center;">
           <a href="https://ticketing-system-render.onrender.com/" style="background-color: #2980b9; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
             🔁 重新訂位
