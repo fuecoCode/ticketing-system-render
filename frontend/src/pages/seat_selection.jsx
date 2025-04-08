@@ -57,10 +57,29 @@ export default function SeatSelectionPage() {
     });
   };
 
-  const handleConfirm = () => {
-    if (selectedSeats.length > 0) {
-      console.log("Locking seat:", selectedSeats);
+  const handleConfirm = async () => {
+    if (selectedSeats.length === 0) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/seats/status`);
+      const data = await res.json();
+
+      const unavailableSeats = selectedSeats.filter(
+        (code) => data[code]?.status !== "available"
+      );
+
+      if (unavailableSeats.length > 0) {
+        alert(`Some seats are no longer available: ${unavailableSeats.join(", ")}`);
+        // refresh seat status in UI
+        fetchSeats();
+        return;
+      }
+
+      // 所有座位都還是 available，繼續導頁
       navigate("/form", { state: { selectedSeats } });
+    } catch (error) {
+      console.error("Failed to verify seat status", error);
+      alert("Something went wrong. Please try again.");
     }
   };
 
