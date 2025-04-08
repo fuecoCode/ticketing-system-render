@@ -1,33 +1,32 @@
 import { useEffect, useState } from "react";
 import { CSVLink } from "react-csv";
+import { useNavigate } from "react-router-dom";
+import NavBar from "../components/NavBar";
 
 export default function AdminReportPage() {
   const [logs, setLogs] = useState([]);
   const [orders, setOrders] = useState([]);
   const [filterEmail, setFilterEmail] = useState("");
+  const navigate = useNavigate();
 
   const isAuthenticated = sessionStorage.getItem("admin_login") === "true";
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) { 
+      alert(`您尚未登入管理員帳號，請先登入。`);
+      navigate("/admin/login");
+      return;
+    }
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/report/logs`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/orders/report/logs`)
       .then(res => res.json())
       .then(setLogs);
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/report/orders`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/orders/report/orders`)
       .then(res => res.json())
       .then(setOrders);
   }, [isAuthenticated]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="p-6 text-center">
-        <h1 className="text-2xl font-bold text-red-600 mb-2">未授權</h1>
-        <p>您尚未登入管理員帳號，請先登入。</p>
-      </div>
-    );
-  }
 
   const filteredOrders = orders.filter(o =>
     filterEmail === "" || o.email.toLowerCase().includes(filterEmail.toLowerCase())
@@ -39,6 +38,7 @@ export default function AdminReportPage() {
 
   return (
     <div className="p-6 space-y-8">
+      <NavBar />
       <h1 className="text-2xl font-bold">管理後台報表</h1>
       <button onClick={() => {
         sessionStorage.removeItem("admin_login");
