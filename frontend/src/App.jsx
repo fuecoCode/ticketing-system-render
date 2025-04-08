@@ -18,7 +18,7 @@ function App() {
       <Route path="/form" element={<FormPage />} />
       <Route path="/cancel" element={<CancelLookupPage />} />
       <Route path="/admin/report" element={<AdminReportPage />} />
-      <Route path="/admin/login" element={<AdminReportPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
     </Routes>
   );
 }
