@@ -9,7 +9,6 @@ export default function AdminLoginPage() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // console.log(`${password} , ${import.meta.env.VITE_ADMIN_PASSWORD}`);
     if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
       sessionStorage.setItem("admin_login", "true");
       navigate("/admin/report");
