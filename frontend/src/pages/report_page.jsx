@@ -1,22 +1,66 @@
 import { useEffect, useState } from "react";
+import { CSVLink } from "react-csv";
 
 export default function AdminReportPage() {
   const [logs, setLogs] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [filterEmail, setFilterEmail] = useState("");
+
+  const isAuthenticated = sessionStorage.getItem("admin_login") === "true";
 
   useEffect(() => {
-    fetch("/api/report/logs")
+    if (!isAuthenticated) return;
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/report/logs`)
       .then(res => res.json())
       .then(setLogs);
 
-    fetch("/api/report/orders")
+    fetch(`${import.meta.env.VITE_API_URL}/api/report/orders`)
       .then(res => res.json())
       .then(setOrders);
-  }, []);
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="p-6 text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-2">未授權</h1>
+        <p>您尚未登入管理員帳號，請先登入。</p>
+      </div>
+    );
+  }
+
+  const filteredOrders = orders.filter(o =>
+    filterEmail === "" || o.email.toLowerCase().includes(filterEmail.toLowerCase())
+  );
+
+  const filteredLogs = logs.filter(l =>
+    filterEmail === "" || l.email.toLowerCase().includes(filterEmail.toLowerCase())
+  );
 
   return (
     <div className="p-6 space-y-8">
       <h1 className="text-2xl font-bold">管理後台報表</h1>
+      <button onClick={() => {
+        sessionStorage.removeItem("admin_login");
+        window.location.href = "/admin/login";
+      }} className="ml-auto bg-red-500 text-white px-3 py-1 rounded">
+        登出
+      </button>
+      <div className="mb-4 flex items-center gap-4">
+        <input
+          type="text"
+          className="border rounded px-3 py-1"
+          placeholder="輸入 Email 篩選"
+          value={filterEmail}
+          onChange={e => setFilterEmail(e.target.value)}
+        />
+        <CSVLink data={filteredOrders} filename="orders_report.csv" className="bg-blue-600 text-white px-4 py-1 rounded">
+          匯出訂單 CSV
+        </CSVLink>
+        <CSVLink data={filteredLogs} filename="logs_report.csv" className="bg-green-600 text-white px-4 py-1 rounded">
+          匯出紀錄 CSV
+        </CSVLink>
+      </div>
 
       <section>
         <h2 className="text-xl font-semibold mb-2">📋 訂單報表</h2>
@@ -33,7 +77,7 @@ export default function AdminReportPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
+              {filteredOrders.map(order => (
                 <tr key={order.id}>
                   <td className="border px-3 py-1">{order.name}</td>
                   <td className="border px-3 py-1">{order.nickname}</td>
@@ -61,7 +105,7 @@ export default function AdminReportPage() {
               </tr>
             </thead>
             <tbody>
-              {logs.map(log => (
+              {filteredLogs.map(log => (
                 <tr key={log.id}>
                   <td className="border px-3 py-1">{log.action}</td>
                   <td className="border px-3 py-1">{log.seat_code}</td>
