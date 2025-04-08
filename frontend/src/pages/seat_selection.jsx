@@ -69,8 +69,8 @@ export default function SeatSelectionPage() {
       );
 
       if (unavailableSeats.length > 0) {
-        alert(`Some seats are no longer available: ${unavailableSeats.join(", ")}`);
-        // refresh seat status in UI
+        alert(`The following seats are no longer available and have been removed from your selection: ${unavailableSeats.join(", ")}`);
+        setSelectedSeats((prev) => prev.filter((code) => !unavailableSeats.includes(code)));
         fetchSeats();
         return;
       }
