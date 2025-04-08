@@ -2,6 +2,7 @@ const path = require("path");
 const express = require("express");
 const router = express.Router();
 const pool = require("../database");
+const { sendBookingConfirmation } = require("../email");
 
 // POST /orders/create
 router.post("/create", async (req, res) => {
@@ -27,6 +28,7 @@ router.post("/create", async (req, res) => {
       }
 
       await client.query("COMMIT");
+      await sendBookingConfirmation(email, name, seats);
       res.json({ success: true });
     } catch (err) {
       await client.query("ROLLBACK");
@@ -87,6 +89,22 @@ router.post("/cancel", async (req, res) => {
     } finally {
       client.release();
     }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// test orders email
+router.post("/test-email", async (req, res) => {
+  const { email, name, seats } = req.body;
+
+  if (!email || !name || !seats || !Array.isArray(seats)) {
+    return res.status(400).json({ success: false, error: "Missing or invalid parameters" });
+  }
+
+  try {
+    await sendBookingConfirmation(email, name, seats);
+    res.json({ success: true, message: "Test email sent." });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
