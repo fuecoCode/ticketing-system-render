@@ -48,6 +48,7 @@ async function initializeDatabase() {
         expires_at BIGINT
       )
     `);
+    
 
     const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
     const leftNumbers = [24, 22, 20, 18, 16, 14];

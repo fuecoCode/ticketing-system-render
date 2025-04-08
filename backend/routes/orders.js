@@ -59,30 +59,53 @@ router.post("/lookup", async (req, res) => {
 
 // POST /orders/cancel
 router.post("/cancel", async (req, res) => {
-  const { email, phone, seat_code } = req.body;
+  const { email, phone, seats } = req.body;
+
+  if (!email || !phone || !seats || !Array.isArray(seats) || seats.length === 0) {
+    return res.status(400).json({ success: false, error: "Missing or invalid parameters" });
+  }
 
   try {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      const deleteResult = await client.query(
-        `DELETE FROM orders WHERE email = $1 AND phone = $2 AND seat_code = $3`,
-        [email, phone, seat_code]
-      );
+      let deletedCount = 0;
 
-      if (deleteResult.rowCount === 0) {
-        await client.query("ROLLBACK");
-        return res.json({ success: false, error: "No matching order found" });
+      for (const code of seats) {
+        const deleteResult = await client.query(
+          `DELETE FROM orders WHERE email = $1 AND phone = $2 AND seat_code = $3`,
+          [email, phone, code]
+        );
+
+        if (deleteResult.rowCount > 0) {
+          deletedCount++;
+
+          await client.query(
+            `UPDATE seats SET status = 'available', locked_at = NULL WHERE code = $1`,
+            [code]
+          );
+        }
       }
 
-      await client.query(
-        `UPDATE seats SET status = 'available', locked_at = NULL WHERE code = $1`,
-        [seat_code]
-      );
+      if (deletedCount === 0) {
+        await client.query("ROLLBACK");
+        return res.json({ success: false, error: "No matching orders found" });
+      }
 
       await client.query("COMMIT");
-      res.json({ success: true });
+
+      // 查詢使用者名字以便寄信
+      const userResult = await client.query(
+        `SELECT name FROM orders WHERE email = $1 AND phone = $2 LIMIT 1`,
+        [email, phone]
+      );
+      const userName = userResult.rows[0]?.name || "顧客";
+
+      // 寄出取消通知信
+      await sendCancellationConfirmation(email, userName, seats);
+
+      res.json({ success: true, cancelled: deletedCount });
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
@@ -94,20 +117,5 @@ router.post("/cancel", async (req, res) => {
   }
 });
 
-// test orders email
-router.post("/test-email", async (req, res) => {
-  const { email, name, seats } = req.body;
-
-  if (!email || !name || !seats || !Array.isArray(seats)) {
-    return res.status(400).json({ success: false, error: "Missing or invalid parameters" });
-  }
-
-  try {
-    await sendBookingConfirmation(email, name, seats);
-    res.json({ success: true, message: "Test email sent." });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 module.exports = router;
