@@ -76,6 +76,7 @@ export default function SeatSelectionPage() {
       }
 
       // 所有座位都還是 available，繼續導頁
+      sessionStorage.setItem("allowForm", "yes");
       navigate("/form", { state: { selectedSeats } });
     } catch (error) {
       console.error("Failed to verify seat status", error);

@@ -2,10 +2,45 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 
+function useBlockBackNavigation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const unblock = window.history.pushState
+      ? (function () {
+          window.history.pushState(null, "", window.location.href);
+          window.addEventListener("popstate", handleBack);
+
+          function handleBack() {
+            navigate("/", { replace: true });
+          }
+
+          return () => {
+            window.removeEventListener("popstate", handleBack);
+          };
+        })()
+      : () => {};
+
+    return unblock;
+  }, [navigate, location]);
+}
+
 export default function FormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const selectedSeats = location.state?.selectedSeats || [];
+
+  useBlockBackNavigation();
+
+  useEffect(() => {
+  if (sessionStorage.getItem("allowForm") !== "yes") {
+    alert("Unauthorized access. Redirecting.");
+    navigate("/", { replace: true });
+  } else {
+    sessionStorage.removeItem("allowForm"); // 一次性防護
+  }
+  }, []);
 
   // ✅ 離開頁面釋放座位 + 跳出確認提示
   useEffect(() => {
@@ -35,7 +70,7 @@ export default function FormPage() {
   useEffect(() => {
     if (selectedSeats.length === 0) {
       alert("No seats selected. Redirecting to seat selection page.");
-      navigate("/");
+      navigate("/", { replace: true });
     } else {
       // 🔐 Lock selected seats on mount
       fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
@@ -77,11 +112,11 @@ export default function FormPage() {
             .then((res) => res.json())
             .then(() => {
               alert("Time is up! Your seats were released. Please start over.");
-              navigate("/");
+              navigate("/", { replace: true });
             })
             .catch((err) => {
               console.error("Error releasing seats:", err);
-              navigate("/");
+              navigate("/", { replace: true });
             });
 
           return 0;
@@ -111,7 +146,7 @@ export default function FormPage() {
       const data = await res.json();
       if (data.success) {
         alert("Booking successful!");
-        navigate("/");
+        navigate("/", { replace: true });
       } else {
         alert("Booking failed!");
       }
@@ -129,7 +164,7 @@ export default function FormPage() {
         body: JSON.stringify({ seats: selectedSeats }),
       });
       alert("You cancelled the booking. Seats released.");
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Error cancelling and releasing seats:", error);
       alert("Failed to cancel. Try again.");
