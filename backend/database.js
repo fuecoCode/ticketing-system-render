@@ -40,6 +40,21 @@ async function initializeDatabase() {
       )
     `);
 
+    // ✅ 新增 unique constraint（email + phone + seat_code）
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conname = 'unique_email_phone_seat'
+        ) THEN
+          ALTER TABLE orders
+          ADD CONSTRAINT unique_email_phone_seat UNIQUE (email, phone, seat_code);
+        END IF;
+      END
+      $$;
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS verifications (
         email TEXT,

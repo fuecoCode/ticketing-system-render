@@ -134,14 +134,25 @@ export default function FormPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false); // ❗放這裡：component 最上層
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true); // 開始提交，鎖定按鈕
+
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, seats: selectedSeats }),
       });
+
+      if (res.status === 409) {
+        alert("部分座位已被預訂，請重新選擇。");
+        return;
+      }
 
       const data = await res.json();
       if (data.success) {
@@ -153,9 +164,10 @@ export default function FormPage() {
     } catch (err) {
       console.error(err);
       alert("Error submitting booking.");
+    } finally {
+      setIsSubmitting(false); // 無論成功或失敗都解鎖按鈕
     }
   };
-
   const handleCancel = async () => {
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
@@ -230,9 +242,12 @@ export default function FormPage() {
         />
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          disabled={isSubmitting}
+          className={`px-4 py-2 rounded text-white ${
+            isSubmitting ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600"
+          }`}
         >
-          Submit Booking
+          {isSubmitting ? "Submitting..." : "Submit Booking"}
         </button>
         <button
             type="button"

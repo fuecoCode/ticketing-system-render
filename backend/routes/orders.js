@@ -15,6 +15,15 @@ router.post("/create", async (req, res) => {
       await client.query("BEGIN");
 
       for (const code of seats) {
+        // 檢查是否已存在相同 email + phone + seat_code 的紀錄
+        const existing = await client.query(
+          `SELECT 1 FROM orders WHERE email = $1 AND phone = $2 AND seat_code = $3 LIMIT 1`,
+          [email, phone, code]
+        );
+
+        if (existing.rows.length > 0) {
+          throw new Error(`Seat ${code} already booked by this user.`);
+        }
         await client.query(
           `INSERT INTO orders (name, nickname, phone, email, seat_code, created_at)
            VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -38,6 +47,9 @@ router.post("/create", async (req, res) => {
       res.json({ success: true });
     } catch (err) {
       await client.query("ROLLBACK");
+      if (err.code === "23505") {
+        return res.status(409).json({ success: false, error: "Duplicate booking detected." });
+      }
       throw err;
     } finally {
       client.release();
