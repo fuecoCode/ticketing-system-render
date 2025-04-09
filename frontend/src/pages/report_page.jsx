@@ -7,6 +7,7 @@ export default function AdminReportPage() {
   const [logs, setLogs] = useState([]);
   const [orders, setOrders] = useState([]);
   const [filterEmail, setFilterEmail] = useState("");
+  const [adminSecret, setAdminSecret] = useState("");
   const navigate = useNavigate();
 
   const isAuthenticated = sessionStorage.getItem("admin_login") === "true";
@@ -43,14 +44,34 @@ export default function AdminReportPage() {
     filterEmail === "" || l.email.toLowerCase().includes(filterEmail.toLowerCase())
   );
 
-  const handleDump = async () => {
+  const handleInitDB = async () => {
+    const confirm = window.confirm("確定要初始化資料庫？將重新建立資料結構與座位。");
+    if (!confirm) return;
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/initdb`);
+    const data = await res.json();
+    setMessage(data.message || (data.success ? "初始化完成" : data.error));
+  };
+
+  const handleClearDB = async () => {
+    const confirm = window.confirm("⚠️ 確定要清除所有訂單與紀錄資料嗎？");
+    if (!confirm) return;
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/clear`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: adminSecret }) // TODO: 改為環境變數驗證
+    });
+    const data = await res.json();
+    setMessage(data.message || data.error);
+  };
+
+  const handleDownloadJSON = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/dump`);
     const data = await res.json();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "database_dump.json";
+    a.download = `database_dump_${new Date().toISOString()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -79,11 +100,21 @@ export default function AdminReportPage() {
         <CSVLink data={filteredLogs} filename="logs_report.csv" className="bg-green-600 text-white px-4 py-1 rounded">
           匯出紀錄 CSV
         </CSVLink>
-        <button
-          onClick={handleDump}
-          className="bg-purple-600 text-white px-4 py-1 rounded"
-        >
-          匯出完整資料庫 JSON
+        <button onClick={handleDownloadJSON} className="bg-purple-600 text-white px-4 py-1 rounded">
+          匯出完整 JSON
+        </button>
+        <button onClick={handleInitDB} className="bg-orange-600 text-white px-4 py-1 rounded">
+          初始化資料庫
+        </button>
+        <input
+          type="password"
+          className="border rounded px-3 py-1"
+          placeholder="輸入管理密碼"
+          value={adminSecret}
+          onChange={(e) => setAdminSecret(e.target.value)}
+        />
+        <button onClick={handleClearDB} className="bg-red-600 text-white px-4 py-1 rounded">
+          清空資料內容
         </button>
       </div>
 
