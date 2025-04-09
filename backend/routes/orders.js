@@ -20,7 +20,7 @@ router.post("/create", async (req, res) => {
   ) {
     return res.status(403).json({ success: false, error: "Invalid or expired booking token." });
   }
-  bookingCache.del(bookingToken); // 一次性使用
+  
 
   try {
     const client = await pool.connect();
@@ -45,6 +45,9 @@ router.post("/create", async (req, res) => {
             error: "此 Email 曾訂票，姓名、暱稱、電話必須與之前相同"
           });
         }
+      }else{
+        // 讓填錯資料的人可以再填一次。
+        bookingCache.del(bookingToken); // 一次性使用
       }
       for (const code of seats) {
         // 檢查是否已存在相同 email + phone + seat_code 的紀錄
