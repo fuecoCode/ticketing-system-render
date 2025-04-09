@@ -4,6 +4,7 @@ const cors = require('cors');
 const seatRoutes = require('./routes/seats.js');
 const orderRoutes = require('./routes/orders.js');
 const verifyRoutes = require('./routes/verify');
+const adminRoutes = require('./routes/admin');
 const { getAppVersion } = require('./version');
 const path = require("path");
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api/seats', seatRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/verify', verifyRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/version', (req, res) => {
   res.json({ version: getAppVersion() });
