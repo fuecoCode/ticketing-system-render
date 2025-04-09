@@ -11,7 +11,7 @@ const { bookingCache } = require("./seats");
 router.post("/create", async (req, res) => {
   const { name, nickname, phone, email, seats, bookingToken  } = req.body;
   const now = Date.now();
-  
+
   // ✅ bookingToken 驗證
   const validSeats = bookingCache.get(bookingToken);
   if (
@@ -55,8 +55,20 @@ router.post("/create", async (req, res) => {
         );
       }
 
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 分鐘
+
+      await client.query(
+        `INSERT INTO verifications (email, phone, code, expires_at)
+         VALUES ($1, $2, $3, $4)`,
+        [email, phone, code, expiresAt]
+      );
+
+      // 更新 sendBookingConfirmation 加驗證碼
+      await sendBookingConfirmation(email, name, seats, code);
+
       await client.query("COMMIT");
-      await sendBookingConfirmation(email, name, seats);
+
       res.json({ success: true });
     } catch (err) {
       await client.query("ROLLBACK");

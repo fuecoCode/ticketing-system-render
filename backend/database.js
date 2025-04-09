@@ -37,6 +37,7 @@ async function initializeDatabase() {
         email TEXT,
         seat_code TEXT REFERENCES seats(code),
         created_at BIGINT
+        verified BOOLEAN DEFAULT FALSE
       )
     `);
 

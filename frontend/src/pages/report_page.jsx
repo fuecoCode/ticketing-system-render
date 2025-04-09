@@ -133,6 +133,7 @@ export default function AdminReportPage() {
                 <th className="px-3 py-2">電話</th>
                 <th className="px-3 py-2">Email</th>
                 <th className="px-3 py-2">座位</th>
+                <th className="px-3 py-2">已驗證</th>
                 <th className="px-3 py-2">時間</th>
               </tr>
             </thead>
@@ -144,6 +145,7 @@ export default function AdminReportPage() {
                   <td className="border px-3 py-1">{order.phone}</td>
                   <td className="border px-3 py-1">{order.email}</td>
                   <td className="border px-3 py-1">{order.seat_code}</td>
+                  <td className="border px-3 py-1 text-center">{order.verified ? "✅" : "❌"}</td>
                   <td className="border px-3 py-1">{formatTime(order.created_at)}</td>
                 </tr>
               ))}

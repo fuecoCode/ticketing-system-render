@@ -91,6 +91,8 @@ router.post("/lock", async (req, res) => {
 
 // POST /release
 router.post("/release", async (req, res) => {
+
+  console.log("📨 收到釋放請求 body：", req.body);
   const { seats } = req.body;
   if (!Array.isArray(seats) || seats.length === 0) {
     return res.status(400).json({ success: false, error: "Missing seat list" });

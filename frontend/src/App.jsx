@@ -7,6 +7,7 @@ import FormPage from "./pages/seat_form.jsx";
 import CancelLookupPage from "./pages/cancel_lookup.jsx";
 import AdminReportPage from "./pages/report_page.jsx"
 import AdminLoginPage from "./pages/admin_login.jsx"
+import VerifyPage from "./pages/verify_email.jsx"
 
 
 import './App.css'
@@ -19,6 +20,7 @@ function App() {
       <Route path="/cancel" element={<CancelLookupPage />} />
       <Route path="/admin/report" element={<AdminReportPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/verify" element={<VerifyPage />} />
     </Routes>
   );
 }
