@@ -3,17 +3,8 @@ const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // for Render's hosted PG
-  }
+  ssl: { rejectUnauthorized: false }
 });
-  // user: process.env.DB_USER,
-  // host: process.env.DB_HOST,
-  // database: process.env.DB_NAME,
-  // password: process.env.DB_PASSWORD,
-  // port: process.env.DB_PORT,
-// });
-
 
 async function initializeDatabase() {
   const client = await pool.connect();
@@ -41,13 +32,11 @@ async function initializeDatabase() {
       )
     `);
 
-    // ✅ 新增 unique constraint（email + phone + seat_code）
     await client.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint
-          WHERE conname = 'unique_email_phone_seat'
+          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_seat'
         ) THEN
           ALTER TABLE orders
           ADD CONSTRAINT unique_email_phone_seat UNIQUE (email, phone, seat_code);
@@ -65,19 +54,32 @@ async function initializeDatabase() {
       )
     `);
 
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS logs (
-      id SERIAL PRIMARY KEY,
-      action TEXT NOT NULL,           -- reserve / cancel
-      seat_code TEXT NOT NULL,
-      email TEXT,
-      timestamp BIGINT NOT NULL,
-      detail JSONB                    -- optional 詳細資訊
-    )
-  `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_verify'
+        ) THEN
+          ALTER TABLE verifications
+          ADD CONSTRAINT unique_email_phone_verify UNIQUE (email, phone);
+        END IF;
+      END
+      $$;
+    `);
 
-    const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i)); // A~L
-    const nums = Array.from({ length: 25 }, (_, i) => i); // 0~24
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        action TEXT NOT NULL,
+        seat_code TEXT NOT NULL,
+        email TEXT,
+        timestamp BIGINT NOT NULL,
+        detail JSONB
+      )
+    `);
+
+    const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i));
+    const nums = Array.from({ length: 25 }, (_, i) => i);
 
     for (let row of rows) {
       for (let num of nums) {
@@ -105,12 +107,9 @@ async function clearDatabase() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-
-    // 清空資料表順序很重要：先清 orders、logs，再清 seats
     await client.query("DELETE FROM orders");
     await client.query("DELETE FROM logs");
     await client.query("UPDATE seats SET status = 'available', locked_at = NULL");
-
     await client.query("COMMIT");
     console.log("資料庫已清空並重設座位狀態");
   } catch (err) {
@@ -122,11 +121,66 @@ async function clearDatabase() {
   }
 }
 
-// 初始化資料庫
+async function clearExpiredUnverifiedOrders(expireMinutes = 15) {
+  const client = await pool.connect();
+  const now = Date.now();
+  const expireThreshold = now - expireMinutes * 60 * 1000;
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `SELECT email, seat_code, created_at FROM orders
+       WHERE verified = false AND created_at < $1`,
+      [expireThreshold]
+    );
+
+    const expiredOrders = result.rows;
+    const seatCodes = expiredOrders.map(row => row.seat_code);
+
+    if (expiredOrders.length > 0) {
+      for (const order of expiredOrders) {
+        await client.query(
+          `INSERT INTO logs (action, seat_code, email, timestamp, detail)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            'auto_clear',
+            order.seat_code,
+            order.email,
+            now,
+            JSON.stringify({ reason: "expired unverified", created_at: order.created_at })
+          ]
+        );
+      }
+
+      await client.query(
+        `UPDATE seats SET status = 'available', locked_at = NULL
+         WHERE code = ANY($1)`,
+        [seatCodes]
+      );
+
+      await client.query(
+        `DELETE FROM orders WHERE verified = false AND created_at < $1`,
+        [expireThreshold]
+      );
+
+      console.log(`🧹 清理 ${expiredOrders.length} 筆未驗證訂單，並已寫入 logs`);
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("❌ 清理未驗證訂單失敗：", err);
+  } finally {
+    client.release();
+  }
+}
+
 initializeDatabase();
 
 module.exports = {
   pool,
   initializeDatabase,
   clearDatabase,
+  clearExpiredUnverifiedOrders
 };

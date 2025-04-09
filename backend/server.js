@@ -6,6 +6,9 @@ const orderRoutes = require('./routes/orders.js');
 const verifyRoutes = require('./routes/verify');
 const adminRoutes = require('./routes/admin');
 const { getAppVersion } = require('./version');
+const cron = require("node-cron");
+const { clearExpiredUnverifiedOrders } = require("./database");
+
 const path = require("path");
 const app = express();
 
@@ -18,6 +21,12 @@ app.use('/api/seats', seatRoutes.router);
 app.use('/api/orders', orderRoutes);
 app.use('/api/verify', verifyRoutes);
 app.use('/api/admin', adminRoutes);
+
+// 執行排程：每 5 分鐘清理未驗證訂單
+cron.schedule("*/5 * * * *", () => {
+  console.log("⏰ [CRON] 執行自動清理未驗證訂單");
+  clearExpiredUnverifiedOrders();
+});
 
 app.get('/api/version', (req, res) => {
   res.json({ version: getAppVersion() });
