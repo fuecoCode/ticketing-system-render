@@ -121,15 +121,11 @@ async function clearDatabase() {
   }
 }
 
-module.exports = {
-  pool,
-  clearDatabase,
-};
-
 // 初始化資料庫
 initializeDatabase();
 
 module.exports = {
   pool,
+  initializeDatabase,
   clearDatabase,
 };

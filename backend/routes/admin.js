@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { clearDatabase } = require("../database"); // 根據你的檔案路徑調整
+const { initializeDatabase, clearDatabase } = require("../database"); // 根據你的檔案路徑調整
 
 // POST /api/admin/clear
 router.post("/admin/clear", async (req, res) => {
@@ -30,6 +30,18 @@ router.get("/admin/dump", async (req, res) => {
     client.release();
 
     res.json({ orders, logs, seats });
+  } catch (err) {
+    console.error("匯出資料失敗", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get("/admin/initdb", async (req, res) => {
+  try {
+
+    initializeDatabase()
+
+    res.json({success: true});
   } catch (err) {
     console.error("匯出資料失敗", err);
     res.status(500).json({ success: false, error: err.message });

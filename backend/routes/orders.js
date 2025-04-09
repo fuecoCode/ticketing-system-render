@@ -1,7 +1,7 @@
 const path = require("path");
 const express = require("express");
 const router = express.Router();
-const pool = require("../database");
+const {pool} = require("../database");
 const { sendBookingConfirmation, sendCancellationConfirmation } = require("../email");
 
 // POST /orders/create

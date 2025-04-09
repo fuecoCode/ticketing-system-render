@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const seatMap = require('../data/seatMap');
-const pool = require("../database");
+const {pool} = require("../database");
 
 // 清除過期鎖定
 async function releaseExpiredLocks() {
