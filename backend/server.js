@@ -14,7 +14,7 @@ const distPath = path.resolve(__dirname, "../frontend/dist");
 app.use(cors());
 // app.use(express.json());
 app.use(express.json({ type: ['application/json', 'text/plain'] }));
-app.use('/api/seats', seatRoutes);
+app.use('/api/seats', seatRoutes.router);
 app.use('/api/orders', orderRoutes);
 app.use('/api/verify', verifyRoutes);
 app.use('/api/admin', adminRoutes);

@@ -123,4 +123,7 @@ router.post("/release", async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = {
+  router,
+  bookingCache,
+};
