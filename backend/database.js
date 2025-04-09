@@ -100,7 +100,36 @@ async function initializeDatabase() {
   }
 }
 
+async function clearDatabase() {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 清空資料表順序很重要：先清 orders、logs，再清 seats
+    await client.query("DELETE FROM orders");
+    await client.query("DELETE FROM logs");
+    await client.query("UPDATE seats SET status = 'available', locked_at = NULL");
+
+    await client.query("COMMIT");
+    console.log("資料庫已清空並重設座位狀態");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("清除資料庫失敗", err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  pool,
+  clearDatabase,
+};
+
 // 初始化資料庫
 initializeDatabase();
 
-module.exports = pool;
+module.exports = {
+  pool,
+  clearDatabase,
+};

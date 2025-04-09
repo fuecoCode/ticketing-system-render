@@ -4,6 +4,7 @@ const cors = require('cors');
 const seatRoutes = require('./routes/seats.js');
 const orderRoutes = require('./routes/orders.js');
 const verifyRoutes = require('./routes/verify');
+const { getAppVersion } = require('./version');
 const path = require("path");
 const app = express();
 
@@ -16,6 +17,10 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/verify', verifyRoutes);
 
+app.get('/api/version', (req, res) => {
+  res.json({ version: getAppVersion() });
+});
+
 console.log("🧪 靜態檔案：", distPath);
 app.use(express.static(distPath));
 
@@ -26,5 +31,5 @@ app.get("/*", function (req, res) {
 
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT} Version: ${getAppVersion()}`);
 });

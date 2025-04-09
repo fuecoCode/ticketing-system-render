@@ -43,6 +43,18 @@ export default function AdminReportPage() {
     filterEmail === "" || l.email.toLowerCase().includes(filterEmail.toLowerCase())
   );
 
+  const handleDump = async () => {
+    const res = await fetch("/api/admin/dump");
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "database_dump.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6 space-y-8">
       <NavBar />
@@ -67,6 +79,12 @@ export default function AdminReportPage() {
         <CSVLink data={filteredLogs} filename="logs_report.csv" className="bg-green-600 text-white px-4 py-1 rounded">
           匯出紀錄 CSV
         </CSVLink>
+        <button
+          onClick={handleDump}
+          className="bg-purple-600 text-white px-4 py-1 rounded"
+        >
+          匯出完整資料庫 JSON
+        </button>
       </div>
 
       <section>
