@@ -54,10 +54,9 @@ export default function FormPage() {
     };
 
     const handleUnload = () => {
-      navigator.sendBeacon(
-        `${import.meta.env.VITE_API_URL}/api/seats/release`,
-        JSON.stringify({ seats: selectedSeats })
-      );
+      const payload = JSON.stringify({ seats: selectedSeats });
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon(`${import.meta.env.VITE_API_URL}/api/seats/release`, blob);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
