@@ -44,7 +44,7 @@ export default function AdminReportPage() {
   );
 
   const handleDump = async () => {
-    const res = await fetch("/api/admin/dump");
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/dump`);
     const data = await res.json();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
