@@ -146,16 +146,16 @@ export default function FormPage() {
           replace: true,
         });
       } else {
-        alert("訂票失敗！");
+        alert("訂票失敗！", err);
       }
     } catch (err) {
       console.error(err);
-      alert("送出訂票時發生錯誤");
+      alert("送出訂票時發生錯誤", err);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleCancel = async () => {
     try {
       await releaseSeats();
