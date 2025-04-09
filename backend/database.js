@@ -36,7 +36,7 @@ async function initializeDatabase() {
         phone TEXT,
         email TEXT,
         seat_code TEXT REFERENCES seats(code),
-        created_at BIGINT
+        created_at BIGINT,
         verified BOOLEAN DEFAULT FALSE
       )
     `);
