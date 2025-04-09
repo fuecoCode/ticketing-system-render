@@ -4,10 +4,23 @@ const router = express.Router();
 const {pool} = require("../database");
 const { sendBookingConfirmation, sendCancellationConfirmation } = require("../email");
 
+// ✅ 加入這行：從 seats 匯入 bookingCache
+const { bookingCache } = require("./seats");
+
 // POST /orders/create
 router.post("/create", async (req, res) => {
-  const { name, nickname, phone, email, seats } = req.body;
+  const { name, nickname, phone, email, seats, bookingToken  } = req.body;
   const now = Date.now();
+  
+  // ✅ bookingToken 驗證
+  const validSeats = bookingCache.get(bookingToken);
+  if (
+    !validSeats ||
+    JSON.stringify(validSeats.sort()) !== JSON.stringify(seats.sort())
+  ) {
+    return res.status(403).json({ success: false, error: "Invalid or expired booking token." });
+  }
+  bookingCache.del(bookingToken); // 一次性使用
 
   try {
     const client = await pool.connect();

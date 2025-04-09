@@ -24,23 +24,27 @@ function useBlockBackNavigation() {
 
     return unblock;
   }, [navigate, location]);
-}
+};
 
 export default function FormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const selectedSeats = location.state?.selectedSeats || [];
+  const bookingToken = location.state?.bookingToken;
 
   useBlockBackNavigation();
 
   useEffect(() => {
-  if (sessionStorage.getItem("allowForm") !== "yes") {
-    alert("Unauthorized access. Redirecting.");
-    navigate("/", { replace: true });
-  } else {
-    sessionStorage.removeItem("allowForm"); // 一次性防護
-  }
-  }, []);
+    if (
+      sessionStorage.getItem("allowForm") !== "yes" ||
+      !bookingToken
+    ) {
+      alert("Unauthorized access. Redirecting.");
+      navigate("/", { replace: true });
+    } else {
+      sessionStorage.removeItem("allowForm");
+    }
+  }, [navigate, bookingToken]);
 
   // ✅ 離開頁面釋放座位 + 跳出確認提示
   useEffect(() => {
@@ -71,21 +75,22 @@ export default function FormPage() {
     if (selectedSeats.length === 0) {
       alert("No seats selected. Redirecting to seat selection page.");
       navigate("/", { replace: true });
-    } else {
-      // 🔐 Lock selected seats on mount
-      fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats: selectedSeats }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Locked seats:", data.lockedSeats);
-        })
-        .catch((err) => {
-          console.error("Error locking seats:", err);
-        });
-    }
+    } 
+    // else {
+    //   // 🔐 Lock selected seats on mount
+    //   fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ seats: selectedSeats }),
+    //   })
+    //     .then((res) => res.json())
+    //     .then((data) => {
+    //       console.log("Locked seats:", data.lockedSeats);
+    //     })
+    //     .catch((err) => {
+    //       console.error("Error locking seats:", err);
+    //     });
+    // }
   }, [selectedSeats, navigate]);
 
   const [formData, setFormData] = useState({
@@ -96,38 +101,30 @@ export default function FormPage() {
   });
 
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
-
   useEffect(() => {
-    const timer = setInterval(async () => {
+    const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-
-          // 🔓 Release locked seats on timeout
-          fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ seats: selectedSeats }),
-          })
-            .then((res) => res.json())
-            .then(() => {
-              alert("Time is up! Your seats were released. Please start over.");
-              navigate("/", { replace: true });
-            })
-            .catch((err) => {
-              console.error("Error releasing seats:", err);
-              navigate("/", { replace: true });
-            });
-
+          handleTimeout();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [navigate, selectedSeats]);
+  }, []);
 
+  const handleTimeout = async () => {
+    try {
+      await releaseSeats();
+      alert("Time is up! Your seats were released. Please start over.");
+    } catch (err) {
+      console.error("Error releasing seats:", err);
+    } finally {
+      navigate("/", { replace: true });
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -146,7 +143,7 @@ export default function FormPage() {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, seats: selectedSeats }),
+        body: JSON.stringify({ ...formData, seats: selectedSeats, bookingToken }),
       });
 
       if (res.status === 409) {
@@ -170,11 +167,7 @@ export default function FormPage() {
   };
   const handleCancel = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats: selectedSeats }),
-      });
+      await releaseSeats();
       alert("You cancelled the booking. Seats released.");
       navigate("/", { replace: true });
     } catch (error) {
@@ -190,20 +183,33 @@ export default function FormPage() {
   };
 
   const releaseSeats = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seats: selectedSeats }),
-    });
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/seats/release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seats: selectedSeats }),
+      });
+    } catch (err) {
+      console.error("Error releasing seats:", err);
+    }
   };
 
 
   return (
     <div className="p-6 max-w-xl mx-auto">
-    <NavBar />
+      <NavBar />
       <h2 className="text-2xl font-bold mb-4">Fill Your Information</h2>
-      <p className="mb-4">Selected Seats: {selectedSeats.join(", ")}</p>
-      <p className="mb-4 text-red-500">Time Remaining: {formatTime(timeLeft)}</p>
+      <p className="mb-2">Selected Seats: {selectedSeats.join(", ")}</p>
+      <div className="mb-4">
+        <p className="text-sm text-red-500 font-semibold mb-1">
+          Time Remaining: {formatTime(timeLeft)}
+        </p>
+        <progress
+          value={progressPercent}
+          max="100"
+          className="w-full h-3 rounded bg-gray-200"
+        />
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -250,12 +256,12 @@ export default function FormPage() {
           {isSubmitting ? "Submitting..." : "Submit Booking"}
         </button>
         <button
-            type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-          >
-            Cancel
-          </button>
+          type="button"
+          onClick={handleCancel}
+          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+        >
+          Cancel
+        </button>
       </form>
     </div>
   );

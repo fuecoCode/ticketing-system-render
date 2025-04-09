@@ -65,6 +65,7 @@ export default function SeatSelectionPage() {
     if (selectedSeats.length === 0) return;
 
     try {
+      // 再次確認目前座位狀態
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/seats/status`);
       const data = await res.json();
 
@@ -79,16 +80,38 @@ export default function SeatSelectionPage() {
         return;
       }
 
-      // 所有座位都還是 available，繼續導頁
+      // 👉 鎖定座位並取得 bookingToken
+      const lockRes = await fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seats: selectedSeats })
+      });
+
+      const lockData = await lockRes.json();
+
+      if (!lockRes.ok || !lockData.success) {
+        alert(lockData.error || "Failed to lock seats. Please try again.");
+        fetchSeats();
+        return;
+      }
+
+      // ✅ 帶 token 與 selectedSeats 導入 form 頁面
+      const bookingToken = lockData.bookingToken;
       sessionStorage.setItem("allowForm", "yes");
-      navigate("/form", { state: { selectedSeats } });
+      navigate("/form", {
+        state: {
+          selectedSeats,
+          bookingToken
+        }
+      });
+
     } catch (error) {
-      console.error("Failed to verify seat status", error);
+      console.error("Error during seat confirmation:", error);
       alert("Something went wrong. Please try again.");
     }
   };
 
-  console.log(`${import.meta.env.VITE_API_URL}`); 
+  // console.log(`${import.meta.env.VITE_API_URL}`); 
 
   return (
     <div className="p-4 sm:p-6 max-w-full sm:max-w-4xl mx-auto">
