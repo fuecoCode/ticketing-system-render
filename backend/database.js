@@ -31,20 +31,7 @@ async function initializeDatabase() {
         verified BOOLEAN DEFAULT FALSE
       )
     `);
-
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_seat'
-        ) THEN
-          ALTER TABLE orders
-          ADD CONSTRAINT unique_email_phone_seat UNIQUE (email, phone, seat_code);
-        END IF;
-      END
-      $$;
-    `);
-
+    
     await client.query(`
       CREATE TABLE IF NOT EXISTS verifications (
         email TEXT,
@@ -52,19 +39,6 @@ async function initializeDatabase() {
         code TEXT,
         expires_at BIGINT
       )
-    `);
-
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_verify'
-        ) THEN
-          ALTER TABLE verifications
-          ADD CONSTRAINT unique_email_phone_verify UNIQUE (email, phone);
-        END IF;
-      END
-      $$;
     `);
 
     await client.query(`

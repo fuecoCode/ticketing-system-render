@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function VerifyPage() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || "");
   const [phone] = useState(location.state?.phone || ""); // 若後端驗證用得到
@@ -27,7 +29,7 @@ export default function VerifyPage() {
     if (data.success) {
       setMessage("✅ 驗證成功，即將跳轉...");
       sessionStorage.setItem("booking_success", "true");
-      setTimeout(() => navigate("/success"), 1500);
+      setTimeout(() => navigate("654"), 1500);
     }else {
       setMessage(`❌ ${data.error || data.message || "驗證失敗，請稍後再試。"}`);
     }

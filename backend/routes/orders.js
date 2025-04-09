@@ -26,7 +26,26 @@ router.post("/create", async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // 檢查 email 是否曾經訂票，且姓名、暱稱、電話是否一致
+      const check = await client.query(
+        `SELECT name, nickname, phone FROM orders WHERE email = $1 LIMIT 1`,
+        [email]
+      );
 
+      if (check.rows.length > 0) {
+        const prev = check.rows[0];
+        if (
+          prev.name !== name ||
+          prev.nickname !== nickname ||
+          prev.phone !== phone
+        ) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            error: "此 Email 曾訂票，姓名、暱稱、電話必須與之前相同"
+          });
+        }
+      }
       for (const code of seats) {
         // 檢查是否已存在相同 email + phone + seat_code 的紀錄
         const existing = await client.query(
@@ -60,7 +79,9 @@ router.post("/create", async (req, res) => {
 
       await client.query(
         `INSERT INTO verifications (email, phone, code, expires_at)
-         VALUES ($1, $2, $3, $4)`,
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (email, phone)
+         DO UPDATE SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at`,
         [email, phone, code, expiresAt]
       );
 
