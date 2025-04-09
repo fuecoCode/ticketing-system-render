@@ -8,6 +8,7 @@ export default function AdminReportPage() {
   const [orders, setOrders] = useState([]);
   const [filterEmail, setFilterEmail] = useState("");
   const [adminSecret, setAdminSecret] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const isAuthenticated = sessionStorage.getItem("admin_login") === "true";
@@ -80,6 +81,9 @@ export default function AdminReportPage() {
     <div className="p-6 space-y-8">
       <NavBar />
       <h1 className="text-2xl font-bold">管理後台報表</h1>
+      {message && (
+        <p className="text-green-700 font-medium mt-2 mb-4">{message}</p>
+      )}
       <button onClick={() => {
         sessionStorage.removeItem("admin_login");
         window.location.href = "/admin/login";
