@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { initializeDatabase, clearDatabase } = require("../database"); // 根據你的檔案路徑調整
+const { initializeDatabase, clearDatabase, pool } = require("../database");// 根據你的檔案路徑調整
 
 // POST /api/admin/clear
-router.post("/admin/clear", async (req, res) => {
+router.post("/clear", async (req, res) => {
   const { secret } = req.body;
 
   // 防止誤觸，可加上簡單密碼保護
@@ -19,7 +19,7 @@ router.post("/admin/clear", async (req, res) => {
   }
 });
 
-router.get("/admin/dump", async (req, res) => {
+router.get("/dump", async (req, res) => {
   try {
     const client = await pool.connect();
 
@@ -36,14 +36,12 @@ router.get("/admin/dump", async (req, res) => {
   }
 });
 
-router.get("/admin/initdb", async (req, res) => {
+router.get("/initdb", async (req, res) => {
   try {
-
-    initializeDatabase()
-
-    res.json({success: true});
+    await initializeDatabase(); // 注意這裡加了 await
+    res.json({ success: true, message: "資料庫初始化完成" });
   } catch (err) {
-    console.error("匯出資料失敗", err);
+    console.error("初始化資料庫失敗", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
