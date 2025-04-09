@@ -8,6 +8,7 @@ import CancelLookupPage from "./pages/cancel_lookup.jsx";
 import AdminReportPage from "./pages/report_page.jsx"
 import AdminLoginPage from "./pages/admin_login.jsx"
 import VerifyPage from "./pages/verify_email.jsx"
+import SuccessPage from "./pages/book_success.jsx"
 
 
 import './App.css'
@@ -21,6 +22,7 @@ function App() {
       <Route path="/admin/report" element={<AdminReportPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/verify" element={<VerifyPage />} />
+      <Route path="/success" element={<SuccessPage />} />
     </Routes>
   );
 }

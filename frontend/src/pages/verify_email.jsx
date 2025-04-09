@@ -17,13 +17,20 @@ export default function VerifyPage() {
   }, [resendTimer]);
 
   const handleVerify = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/verify`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/verify/confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code })
     });
     const data = await res.json();
-    setMessage(data.success ? "✅ 驗證成功！您已完成訂票" : `❌ ${data.error}`);
+
+    if (data.success) {
+      setMessage("✅ 驗證成功，即將跳轉...");
+      sessionStorage.setItem("booking_success", "true");
+      setTimeout(() => navigate("/success"), 1500);
+    }else {
+      setMessage(`❌ ${data.error}`);
+    }
   };
 
   const handleResend = async () => {
