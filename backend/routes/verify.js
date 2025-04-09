@@ -1,85 +1,130 @@
-const path = require("path");
-const express = require("express");
-const router = express.Router();
-const { pool } = require("../database");
-const { sendVerificationCode } = require("../email");
+require("dotenv").config();
+const { Pool } = require("pg");
 
-// POST /verify/request
-router.post("/request", async (req, res) => {
-  const { email, phone } = req.body;
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 分鐘
-
-  try {
-    await pool.query(
-      `INSERT INTO verifications (email, phone, code, expires_at) VALUES ($1, $2, $3, $4)`,
-      [email, phone, code, expiresAt]
-    );
-
-    await sendVerificationCode(email, code);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Verification error:", err);
-    res.status(500).json({
-      error: err.message,
-      detail: err.code === 'ECONNREFUSED' ? 'Database not connected' : 'Email failed or DB error',
-    });
-  }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-// POST /verify/confirm
-router.post("/confirm", async (req, res) => {
-  const { email, phone, code } = req.body;
-  const now = Date.now();
-
+async function initializeDatabase() {
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
-      `SELECT * FROM verifications 
-       WHERE email = $1 AND phone = $2 AND code = $3 AND expires_at > $4 
-       ORDER BY expires_at DESC LIMIT 1`,
-      [email, phone, code, now]
-    );
+    await client.query("BEGIN");
 
-    if (result.rows.length > 0) {
-      await pool.query(
-        `DELETE FROM verifications WHERE email = $1 AND phone = $2`,
-        [email, phone]
-      );
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS seats (
+        code TEXT PRIMARY KEY,
+        status TEXT NOT NULL,
+        locked_at BIGINT
+      )
+    `);
 
-      // 同步將該使用者的訂單設為已驗證
-      await pool.query(
-        `UPDATE orders SET verified = true WHERE email = $1 AND phone = $2`,
-        [email, phone]
-      );
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        nickname TEXT,
+        phone TEXT,
+        email TEXT,
+        seat_code TEXT REFERENCES seats(code),
+        created_at BIGINT,
+        verified BOOLEAN DEFAULT FALSE
+      )
+    `);
 
-      res.json({ success: true });
-    } else {
-      res.status(400).json({ success: false, message: "驗證失敗或已過期" });
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_seat'
+        ) THEN
+          ALTER TABLE orders
+          ADD CONSTRAINT unique_email_phone_seat UNIQUE (email, phone, seat_code);
+        END IF;
+      END
+      $$;
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS verifications (
+        email TEXT,
+        phone TEXT,
+        code TEXT,
+        expires_at BIGINT
+      )
+    `);
+
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'unique_email_phone_verify'
+        ) THEN
+          ALTER TABLE verifications
+          ADD CONSTRAINT unique_email_phone_verify UNIQUE (email, phone);
+        END IF;
+      END
+      $$;
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        action TEXT NOT NULL,
+        seat_code TEXT NOT NULL,
+        email TEXT,
+        timestamp BIGINT NOT NULL,
+        detail JSONB
+      )
+    `);
+
+    const rows = Array.from({ length: 12 }, (_, i) => String.fromCharCode(65 + i));
+    const nums = Array.from({ length: 25 }, (_, i) => i);
+
+    for (let row of rows) {
+      for (let num of nums) {
+        const code = `${row}${num}`;
+        await client.query(
+          `INSERT INTO seats (code, status, locked_at)
+           VALUES ($1, 'available', NULL)
+           ON CONFLICT (code) DO NOTHING`,
+          [code]
+        );
+      }
     }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    await client.query("COMMIT");
+    console.log("Database initialized.");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Database initialization failed:", error);
+  } finally {
+    client.release();
   }
-});
+}
 
-// Resend verification code
-router.post("/resend", async (req, res) => {
-  const { email, phone } = req.body;
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 分鐘
-
+async function clearDatabase() {
+  const client = await pool.connect();
   try {
-    await pool.query(
-      `INSERT INTO verifications (email, phone, code, expires_at)
-       VALUES ($1, $2, $3, $4)`,
-      [email, phone, code, expiresAt]
-    );
-
-    await sendVerificationCode(email, code);
-    res.json({ success: true, message: "驗證碼已重新寄出" });
+    await client.query("BEGIN");
+    await client.query("DELETE FROM orders");
+    await client.query("DELETE FROM logs");
+    await client.query("UPDATE seats SET status = 'available', locked_at = NULL");
+    await client.query("COMMIT");
+    console.log("資料庫已清空並重設座位狀態");
   } catch (err) {
-    console.error("Resend verification error:", err);
-    res.status(500).json({ error: err.message });
+    await client.query("ROLLBACK");
+    console.error("清除資料庫失敗", err);
+    throw err;
+  } finally {
+    client.release();
   }
-});
+}
 
-module.exports = router;
+initializeDatabase();
+
+module.exports = {
+  pool,
+  initializeDatabase,
+  clearDatabase
+};

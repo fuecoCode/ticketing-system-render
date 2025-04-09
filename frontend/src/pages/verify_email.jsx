@@ -29,7 +29,7 @@ export default function VerifyPage() {
       sessionStorage.setItem("booking_success", "true");
       setTimeout(() => navigate("/success"), 1500);
     }else {
-      setMessage(`❌ ${data.error}`);
+      setMessage(`❌ ${data.error || data.message || "驗證失敗，請稍後再試。"}`);
     }
   };
 
