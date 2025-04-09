@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 export default function VerifyPage() {
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [phone] = useState(location.state?.phone || ""); // 若後端驗證用得到
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [resendTimer, setResendTimer] = useState(0);

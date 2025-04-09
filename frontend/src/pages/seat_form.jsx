@@ -48,10 +48,10 @@ export default function FormPage() {
 
   // ✅ 離開頁面釋放座位 + 跳出確認提示
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = ""; // 必要，讓提示能顯示（不能客製文字）
-    };
+    // const handleBeforeUnload = (e) => {
+    //   e.preventDefault();
+    //   e.returnValue = ""; // 必要，讓提示能顯示（不能客製文字）
+    // };
 
     const handleUnload = () => {
       const payload = JSON.stringify({ seats: selectedSeats });
@@ -59,11 +59,11 @@ export default function FormPage() {
       navigator.sendBeacon(`${import.meta.env.VITE_API_URL}/api/seats/release`, blob);
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    // window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("unload", handleUnload);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("unload", handleUnload);
       releaseSeats(); // React unmount 時釋放
     };
@@ -75,21 +75,6 @@ export default function FormPage() {
       alert("No seats selected. Redirecting to seat selection page.");
       navigate("/", { replace: true });
     } 
-    // else {
-    //   // 🔐 Lock selected seats on mount
-    //   fetch(`${import.meta.env.VITE_API_URL}/api/seats/lock`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ seats: selectedSeats }),
-    //   })
-    //     .then((res) => res.json())
-    //     .then((data) => {
-    //       console.log("Locked seats:", data.lockedSeats);
-    //     })
-    //     .catch((err) => {
-    //       console.error("Error locking seats:", err);
-    //     });
-    // }
   }, [selectedSeats, navigate]);
 
   const [formData, setFormData] = useState({
@@ -136,7 +121,7 @@ export default function FormPage() {
     e.preventDefault();
     if (isSubmitting) return;
 
-    setIsSubmitting(true); // 開始提交，鎖定按鈕
+    setIsSubmitting(true);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/create`, {
@@ -152,18 +137,25 @@ export default function FormPage() {
 
       const data = await res.json();
       if (data.success) {
-        alert("Booking successful!");
-        navigate("/", { replace: true });
+        alert("預約成功，請前往信箱查看驗證碼！");
+        navigate("/verify", {
+          state: {
+            email: formData.email,
+            phone: formData.phone,
+          },
+          replace: true,
+        });
       } else {
-        alert("Booking failed!");
+        alert("訂票失敗！");
       }
     } catch (err) {
       console.error(err);
-      alert("Error submitting booking.");
+      alert("送出訂票時發生錯誤");
     } finally {
-      setIsSubmitting(false); // 無論成功或失敗都解鎖按鈕
+      setIsSubmitting(false);
     }
   };
+  
   const handleCancel = async () => {
     try {
       await releaseSeats();
