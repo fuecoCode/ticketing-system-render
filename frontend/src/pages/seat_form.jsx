@@ -194,7 +194,7 @@ export default function FormPage() {
     }
   };
 
-
+  const progressPercent = ((300 - timeLeft) / 300) * 100;
   return (
     <div className="p-6 max-w-xl mx-auto">
       <NavBar />
