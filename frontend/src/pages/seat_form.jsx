@@ -146,7 +146,7 @@ export default function FormPage() {
           replace: true,
         });
       } else {
-        alert("訂票失敗！", err);
+        alert(`訂票失敗：${data.error}`);
       }
     } catch (err) {
       console.error(err);
