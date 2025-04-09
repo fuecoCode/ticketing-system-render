@@ -28,26 +28,26 @@ router.post("/request", async (req, res) => {
 
 // POST /verify/confirm
 router.post("/confirm", async (req, res) => {
-  const { email, phone, code } = req.body;
+  const { email, code } = req.body;
   const now = Date.now();
 
   try {
     const result = await pool.query(
       `SELECT * FROM verifications 
-       WHERE email = $1 AND phone = $2 AND code = $3 AND expires_at > $4 
+       WHERE email = $1 AND code = $2 AND expires_at > $3 
        ORDER BY expires_at DESC LIMIT 1`,
-      [email, phone, code, now]
+      [email, code, now]
     );
 
     if (result.rows.length > 0) {
       await pool.query(
-        `DELETE FROM verifications WHERE email = $1 AND phone = $2 AND code = $3`,
-        [email, phone, code]
+        `DELETE FROM verifications WHERE email = $1 AND code = $2`,
+        [email, code]
       );
 
       await pool.query(
-        `UPDATE orders SET verified = true WHERE email = $1 AND phone = $2`,
-        [email, phone]
+        `UPDATE orders SET verified = true WHERE email = $1`,
+        [email]
       );
 
       res.json({ success: true });
